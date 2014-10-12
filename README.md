@@ -12,4 +12,4 @@ Vee上传
 
 
 
-点击链接加入群【BOL Studio Scripts】：http://jq.qq.com/?_wv=1027&k=Rk7xBJ
+http://jq.qq.com/?_wv=1027&k=Rk7xBJ
