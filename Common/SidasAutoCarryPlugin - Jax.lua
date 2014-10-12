@@ -1,3 +1,5 @@
+local Version = 1.0
+
 function PluginOnLoad()
 	JaxLoad()
 	JaxMenu()
@@ -90,7 +92,7 @@ function JaxMenu()
 	Menu:addParam("sep", "---- [ 宗师之威 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("UseR", "智能使用大招", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("UseREnemies", "使用最小人数", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
-	Menu:addParam("UseRHealths", "使用最小血量", SCRIPT_PARAM_SLICE, 80, 10, 100, -1)
+	Menu:addParam("UseRHealths", "使用最小血量", SCRIPT_PARAM_SLICE, 80, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")

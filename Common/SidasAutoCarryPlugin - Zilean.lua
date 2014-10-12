@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	ZileanLoad()
@@ -58,7 +60,7 @@ function PluginOnTick()
 	if Menu.SmartUlt then
 		ZileanUlt()
 	end
-	if Menu.DashesE and (Menu2.AutoCarry or ZileanHealthLow()) then
+	if Menu.DashesE and (Menu2.AutoCarry or Menu2.MixedMode or ZileanHealthLow()) then
 		ZileanPush()
 	end
 	ZileanKill()
@@ -67,13 +69,13 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
 		end
 		if Menu.DrawR and rReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
 		end
 	end
 end
@@ -83,14 +85,14 @@ function ZileanMenu()
 	Menu:addParam("ComboQ", "连招使用 Q", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("ComboW", "连招使用 W", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("ComboE", "连招使用 E", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("CRangesE", "距离设置 E", SCRIPT_PARAM_SLICE, 500, 100, 700, -1)
+	Menu:addParam("CRangesE", "距离设置 E", SCRIPT_PARAM_SLICE, 500, 0, SpellE.Range, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 消耗设置 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("HarassQ", "消耗使用 Q", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("HarassW", "消耗使用 W", SCRIPT_PARAM_ONOFF, false)
 	Menu:addParam("HarassE", "消耗使用 E", SCRIPT_PARAM_ONOFF, false)
-	Menu:addParam("HRangesE", "距离设置 E", SCRIPT_PARAM_SLICE, 500, 100, 700, -1)
+	Menu:addParam("HRangesE", "距离设置 E", SCRIPT_PARAM_SLICE, 500, 0, SpellE.Range, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")
@@ -100,13 +102,13 @@ function ZileanMenu()
 
 	Menu:addParam("sep", "---- [ 时光发条 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("DashesE", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("RangesE", "目标的距离小于", SCRIPT_PARAM_SLICE, 500, 100, 700, -1)
-	Menu:addParam("HealthE", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 10, 100, -1)
+	Menu:addParam("RangesE", "目标的距离小于", SCRIPT_PARAM_SLICE, 500, 0, SpellE.Range, -1)
+	Menu:addParam("HealthE", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 时光倒流 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("SmartUlt", "智能使用大招", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("HealthR", "使用血量设置", SCRIPT_PARAM_SLICE, 20, 10, 90, -1)
+	Menu:addParam("HealthR", "使用血量设置", SCRIPT_PARAM_SLICE, 20, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("sep", "---- [ 使用列表 ] ----", SCRIPT_PARAM_INFO, "")
 	for _, ally in ipairs(Alliance) do

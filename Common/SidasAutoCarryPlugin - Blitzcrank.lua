@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	BlitzcrankLoad()
@@ -31,10 +33,10 @@ function PluginOnTick()
 			end
 		end
 	end
-	if Menu.SpellQSub.DashesQ and (Menu2.AutoCarry or not BlitzcrankHealthLow()) then
+	if Menu.SpellQSub.DashesQ and (Menu2.AutoCarry or Menu2.MixedMode or not BlitzcrankHealthLow()) then
 		BlitzcrankDashes()
 	end
-	if Menu.SpellQSub.ImmobileQ and (Menu2.AutoCarry or not BlitzcrankHealthLow()) then
+	if Menu.SpellQSub.ImmobileQ and (Menu2.AutoCarry or Menu2.MixedMode or not BlitzcrankHealthLow()) then
 		BlitzcrankImmobile()
 	end
 	BlitzcrankKill()
@@ -57,10 +59,10 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawSub.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
 		end
 		if Menu.DrawSub.DrawR and rReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
 		end
 	end
 end

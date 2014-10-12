@@ -1,3 +1,5 @@
+local Version = 1.0
+
 function PluginOnLoad()
 	MasterYiLoad()
 	MasterYiMenu()
@@ -29,10 +31,10 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, qRange, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, qRange, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, eRange, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, eRange, 0xFFFFFF)
 		end
 	end
 end

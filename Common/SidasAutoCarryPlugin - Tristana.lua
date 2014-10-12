@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	TristanaLoad()
@@ -31,7 +33,7 @@ function PluginOnTick()
 			end
 		end
 	end
-	if Menu.DashesR and (Menu2.AutoCarry or TristanaHealthLow()) then
+	if Menu.DashesR and (Menu2.AutoCarry or Menu2.MixedMode or TristanaHealthLow()) then
 		TristanaDashes()
 	end
 	TristanaKill()
@@ -54,13 +56,13 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawW and wReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
 		end
 		if Menu.DrawR and rReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
 		end
 	end
 end
@@ -70,14 +72,14 @@ function TristanaMenu()
 	Menu:addParam("ComboQ", "连招使用 Q", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("ComboE", "连招使用 E", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("ComboR", "连招使用 R", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("CRangesR", "距离设置 R", SCRIPT_PARAM_SLICE, 250, 0, 700, -1)
+	Menu:addParam("CRangesR", "距离设置 R", SCRIPT_PARAM_SLICE, 250, 0, SpellR.Range, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 消耗设置 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("HarassQ", "消耗使用 Q", SCRIPT_PARAM_ONOFF, false)
 	Menu:addParam("HarassE", "消耗使用 E", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("HarassR", "消耗使用 R", SCRIPT_PARAM_ONOFF, false)
-	Menu:addParam("HRangesR", "距离设置 R", SCRIPT_PARAM_SLICE, 250, 0, 700, -1)
+	Menu:addParam("HRangesR", "距离设置 R", SCRIPT_PARAM_SLICE, 250, 0, SpellR.Range, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 击杀设置 ] ----", SCRIPT_PARAM_INFO, "")
@@ -87,7 +89,7 @@ function TristanaMenu()
 
 	Menu:addParam("sep", "---- [ 自动防突 - 毁灭射击 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("DashesR", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("RangesR", "目标的距离小于", SCRIPT_PARAM_SLICE, 500, 0, 700, -1)
+	Menu:addParam("RangesR", "目标的距离小于", SCRIPT_PARAM_SLICE, 500, 0, SpellR.Range, -1)
 	Menu:addParam("HealthR", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("sep", "---- [ 自动打断 - 毁灭射击 ] ----", SCRIPT_PARAM_INFO, "")

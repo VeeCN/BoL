@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	EzrealLoad()
@@ -31,13 +33,13 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
 		end
 		if Menu.DrawW and wReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
 		end
 	end
 end

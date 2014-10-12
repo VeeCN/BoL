@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	MorganaLoad()
@@ -31,10 +33,10 @@ function PluginOnTick()
 			end
 		end
 	end
-	if Menu.DashesQ and (Menu2.AutoCarry or MorganaHealthLow()) then
+	if Menu.DashesQ and (Menu2.AutoCarry or Menu2.MixedMode or MorganaHealthLow()) then
 		MorganaDashes()
 	end
-	if (Menu.ImmobileQ or Menu.ImmobileW) and (Menu2.AutoCarry or MorganaHealthLow()) then
+	if (Menu.ImmobileQ or Menu.ImmobileW) and (Menu2.AutoCarry or Menu2.MixedMode or MorganaHealthLow()) then
 		MorganaImmobile()
 	end
 	MorganaKill()
@@ -43,16 +45,16 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
 		end
 		if Menu.DrawW and wReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
 		end
 		if Menu.DrawR and rReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
 		end
 	end
 end
@@ -79,7 +81,7 @@ function MorganaMenu()
 	Menu:addParam("sep", "---- [ 暗之禁锢 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("ImmobileQ", "目标禁锢时使用", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("DashesQ", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("RangesQ", "目标的距离小于", SCRIPT_PARAM_SLICE, 600, 0, 1170, -1)
+	Menu:addParam("RangesQ", "目标的距离小于", SCRIPT_PARAM_SLICE, 600, 0, SpellQ.Range, -1)
 	Menu:addParam("HealthQ", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 

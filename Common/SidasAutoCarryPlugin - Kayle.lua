@@ -1,4 +1,6 @@
-require 'VPrediction'
+local Version = 1.0
+
+require "VPrediction"
 
 function PluginOnLoad()
 	KayleLoad()
@@ -34,7 +36,7 @@ function PluginOnTick()
 	if Menu.SmartUlt then
 		KayleUlt()
 	end
-	if Menu.DashesQ and (Menu2.AutoCarry or KayleHealthLow()) then
+	if Menu.DashesQ and (Menu2.AutoCarry or Menu2.MixedMode or KayleHealthLow()) then
 		KayleDashes()
 	end
 	KayleKill()
@@ -43,16 +45,16 @@ end
 function PluginOnDraw()
 	if not myHero.dead then
 		if Menu.DrawQ and qReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
 		end
 		if Menu.DrawW and wReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFFFFFF)
 		end
 		if Menu.DrawE and eReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
 		end
 		if Menu.DrawR and rReady then
-			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFF000000)
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
 		end
 	end
 end
@@ -73,13 +75,13 @@ function KayleMenu()
 	Menu:addParam("sep", "---- [ 清算 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("SmartKill", "智能连招击杀", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("DashesQ", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("RangesQ", "使用的距离设置", SCRIPT_PARAM_SLICE, 500, 100, 700, -1)
-	Menu:addParam("HealthQ", "使用的血量设置", SCRIPT_PARAM_SLICE, 50, 10, 100, -1)
+	Menu:addParam("RangesQ", "使用的距离设置", SCRIPT_PARAM_SLICE, 500, 0, SpellQ.Range, -1)
+	Menu:addParam("HealthQ", "使用的血量设置", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 	
 	Menu:addParam("sep", "---- [ 神圣庇护 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("SmartUlt", "智能使用大招", SCRIPT_PARAM_ONOFF, true)
-	Menu:addParam("HealthR", "使用血量设置", SCRIPT_PARAM_SLICE, 20, 10, 90, -1)
+	Menu:addParam("HealthR", "使用血量设置", SCRIPT_PARAM_SLICE, 20, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("sep", "---- [ 使用列表 ] ----", SCRIPT_PARAM_INFO, "")
 	for _, ally in ipairs(Alliance) do
