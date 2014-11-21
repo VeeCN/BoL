@@ -1,6 +1,12 @@
-local Version = 1.0
+local Version = "1.0"
 
 require "VPrediction"
+
+local SpellQ = {Range = 1175, Speed = 1200, Delay = 0.25, Width =  53}
+local SpellW = {Range =  900, Speed =   20, Delay = 0.25, Width = 131}
+local SpellE = {Range =  750, Speed =   20, Delay = 0.52, Width =   0}
+local SpellR = {Range =  600, Speed =   20, Delay = 0.35, Width =   0}
+local qReady, wReady, eReady, rReady = false, false, false, false
 
 function PluginOnLoad()
 	MorganaLoad()
@@ -11,32 +17,16 @@ function PluginOnTick()
 	MorganaCheck()
 	if ValidTarget(Target) then
 		if Menu2.AutoCarry then
-			if qReady and Menu.ComboQ and GetDistance(Target) < SpellQ.Range then
-				CastVPredQ(Target)
-			end
-			if wReady and Menu.ComboW and GetDistance(Target) < SpellW.Range then
-				CastVPredW(Target)
-			end
-			if rReady and Menu.ComboR and GetDistance(Target) < SpellR.Range and CountEnemyHeroInRange(SpellR.Range) >= Menu.EnemiesR then
-				CastSpell(_R)
-			end
+			MorganaCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if qReady and Menu.HarassQ and GetDistance(Target) < SpellQ.Range then
-				CastVPredQ(Target)
-			end
-			if wReady and Menu.HarassW and GetDistance(Target) < SpellW.Range then
-				CastVPredW(Target)
-			end
-			if rReady and Menu.HarassR and GetDistance(Target) < SpellR.Range and CountEnemyHeroInRange(SpellR.Range) >= Menu.EnemiesR then
-				CastSpell(_R)
-			end
+			MorganaHarass(Target)
 		end
 	end
-	if Menu.DashesQ and (Menu2.AutoCarry or Menu2.MixedMode or MorganaHealthLow()) then
+	if Menu.DashesQ then
 		MorganaDashes()
 	end
-	if (Menu.ImmobileQ or Menu.ImmobileW) and (Menu2.AutoCarry or Menu2.MixedMode or MorganaHealthLow()) then
+	if Menu.ImmobileQ or Menu.ImmobileW then
 		MorganaImmobile()
 	end
 	MorganaKill()
@@ -72,17 +62,16 @@ function MorganaMenu()
 	Menu:addParam("HarassR", "消耗使用 R", SCRIPT_PARAM_ONOFF, false)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
-	Menu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")
-	Menu:addParam("EnemiesR", "人数设置 R", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
+	Menu:addParam("sep", "---- [ 技能设置 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("KillQ", "击杀使用 Q", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("KillW", "击杀使用 W", SCRIPT_PARAM_ONOFF, true)
+	Menu:addParam("EnemiesR", "人数设置 R", SCRIPT_PARAM_SLICE, 2, 1, 5, 0)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 暗之禁锢 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("ImmobileQ", "目标禁锢时使用", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("DashesQ", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("RangesQ", "目标的距离小于", SCRIPT_PARAM_SLICE, 600, 0, SpellQ.Range, -1)
-	Menu:addParam("HealthQ", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 痛苦腐蚀 ] ----", SCRIPT_PARAM_INFO, "")
@@ -98,11 +87,6 @@ end
 
 function MorganaLoad()
 	AutoCarry.SkillsCrosshair.range = 1175
-	SpellQ = {Range = 1175, Speed = 1200, Delay = 0.25, Width =  70}
-	SpellW = {Range =  900, Speed =   20, Delay = 0.25, Width = 175}
-	SpellE = {Range =  750, Speed =   20, Delay = 0.52, Width =   0}
-	SpellR = {Range =  600, Speed =   20, Delay = 0.35, Width =   0}
-	qReady, wReady, eReady, rReady = false, false, false, false
 	VP = VPrediction()
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
@@ -125,6 +109,30 @@ function MorganaCheck()
 			eDmg = getDmg("E", enemy, myHero)
 			rDmg = getDmg("R", enemy, myHero)
 		end
+	end
+end
+
+function MorganaCombo(unit)
+	if qReady and Menu.ComboQ and GetDistance(unit) < SpellQ.Range then
+		CastVPredQ(unit)
+	end
+	if wReady and Menu.ComboW and GetDistance(unit) < SpellW.Range then
+		CastVPredW(unit)
+	end
+	if rReady and Menu.ComboR and GetDistance(unit) < SpellR.Range and CountEnemyHeroInRange(SpellR.Range) >= Menu.EnemiesR then
+		CastSpell(_R)
+	end
+end
+
+function MorganaHarass(unit)
+	if qReady and Menu.HarassQ and GetDistance(unit) < SpellQ.Range then
+		CastVPredQ(unit)
+	end
+	if wReady and Menu.HarassW and GetDistance(unit) < SpellW.Range then
+		CastVPredW(unit)
+	end
+	if rReady and Menu.HarassR and GetDistance(unit) < SpellR.Range and CountEnemyHeroInRange(SpellR.Range) >= Menu.EnemiesR then
+		CastSpell(_R)
 	end
 end
 
@@ -166,14 +174,6 @@ function MorganaImmobile()
 				end
 			end
 		end
-	end
-end
-
-function MorganaHealthLow()
-	if (myHero.health / myHero.maxHealth) < (Menu.HealthQ / 100) then
-		return true
-	else
-		return false
 	end
 end
 

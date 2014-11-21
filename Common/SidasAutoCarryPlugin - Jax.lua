@@ -1,4 +1,8 @@
-local Version = 1.0
+local Version = "1.0"
+
+local qRange, eRange = 700, 187.5
+local qReady, wReady, eReady, rReady = false, false, false, false
+local CounterStrike = false
 
 function PluginOnLoad()
 	JaxLoad()
@@ -28,26 +32,10 @@ function PluginOnTick()
 			end
 		end
 		if Menu2.AutoCarry then
-			if Menu.ComboQ and GetDistance(Target) < qRange then
-				CastSpell(_Q, Target)
-			end
-			if Menu.ComboW and GetDistance(Target) < 375 then
-				CastSpell(_W)
-			end
-			if Menu.ComboE and GetDistance(Target) < eRange then
-				CastSpell(_E)
-			end
+			JaxCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if Menu.HarassQ and GetDistance(Target) < qRange then
-				CastSpell(_Q, Target)
-			end
-			if Menu.HarassW and GetDistance(Target) < 375 then
-				CastSpell(_W)
-			end
-			if Menu.HarassE and GetDistance(Target) < eRange then
-				CastSpell(_E)
-			end
+			JaxHarass(Target)
 		end
 	end
 	JaxKill()
@@ -95,7 +83,7 @@ function JaxMenu()
 	Menu:addParam("UseRHealths", "使用最小血量", SCRIPT_PARAM_SLICE, 80, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
-	Menu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu:addParam("sep", "---- [ 技能设置 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("UseEQ", "使用 E + Q 连招", SCRIPT_PARAM_ONKEYTOGGLE, false, GetKey("T"))
 	Menu:addParam("SmartKill", "智能连招击杀", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
@@ -109,9 +97,6 @@ end
 
 function JaxLoad()
 	AutoCarry.SkillsCrosshair.range = 700
-	qRange, eRange = 700, 187.5
-	qReady, wReady, eReady, rReady = false, false, false, false
-	CounterStrike = false
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
 	Enemies = GetEnemyHeroes()
@@ -133,6 +118,30 @@ function JaxCheck()
 			eDmg = getDmg("E", enemy, myHero)
 			rDmg = getDmg("R", enemy, myHero)
 		end
+	end
+end
+
+function JaxCombo(unit)
+	if Menu.ComboQ and GetDistance(unit) < qRange then
+		CastSpell(_Q, unit)
+	end
+	if Menu.ComboW and GetDistance(unit) < 375 then
+		CastSpell(_W)
+	end
+	if Menu.ComboE and GetDistance(unit) < eRange then
+		CastSpell(_E)
+	end
+end
+
+function JaxHarass(unit)
+	if Menu.HarassQ and GetDistance(unit) < qRange then
+		CastSpell(_Q, unit)
+	end
+	if Menu.HarassW and GetDistance(unit) < 375 then
+		CastSpell(_W)
+	end
+	if Menu.HarassE and GetDistance(unit) < eRange then
+		CastSpell(_E)
 	end
 end
 

@@ -1,236 +1,260 @@
-------#################################################################################------
-------###########################     Officer Caitlyn      ############################------
-------###########################         by Toy           ############################------
-------#################################################################################------
-
---> Version: 1.0
-
---> Features:
---> VPrediction on every skillshot.
---> Cast options for W, to cast W when the enemy is inmmobille (ChainCC) or when he is dashing.
---> Combo E + Q into the enemy when key is pressed (Default T).
---> Dash to mouse position with E when key is pressed (Default G).
---> Checks if you're in the middle of an auto-attack animation, so it doesn't cancel your auto-attack to use a spell (it completes the auto-attack before using the spell).
---> Cast options for Piltover Peacemaker (Q) on autocarry and mixed mode.
---> Draw when you have an enemy that is killable by Ace in the Hole(R) in range (Killshot), and allow you to Killshot by a keypress (Default is R), also KS with Piltover Peacemaker (Q).
---> Drawing option for Q and R(Escaling range for R, checks for the skill level to increase the circle range when it's leveled up).
---> Optional customizable skill ranges, set the skills to whatever range you like (default is max range), also you can change the skill cross-hair range (target selector range, if you set it to a value below 1300, Q and W will be limited by this range, recomended is betwen 1300 and 1400), disable the option to reset the ranges to the default, the ranges are configured with a slider.
---> Set-able hitchance for VPrediction on skillshots, with an explanation about each hitchance that can be readed ingame, W usage and E>Q combo are not affected by this change, as it is already using a custom hitchance for those functions.
-
---> Extra Credits:
---> JBman, as I had some ideas from his script: Killshot with R, and dash to mouse position with E.
-
-if myHero.charName ~= "Caitlyn" then return end
+local Version = "1.0"
 
 require "VPrediction"
 
--- Constants
-local qRange = 1300
-local wRange = 800
-local eRange = 1000
-local rRange = nil
-local xRange = 1300
+local SpellQ = {Range = 1300, Speed = 2200, Delay = 1.00, Width =  68}
+local SpellW = {Range =  800, Speed = 1450, Delay = 0.25, Width =  51}
+local SpellE = {Range =  950, Speed = 2000, Delay = 0.25, Width =  60}
+local SpellR = {Range = 3000, Speed = 1500, Delay = 0.38, Width =   0}
+local qReady, wReady, eReady, rReady = false, false, false, false
 
-local QAble, WAble, RAble = false, false, false
-
-local qDmg, eDmg, rDmg, DmgRange
-
-local VP = nil
-
--- PROdiction
 function PluginOnLoad()
-	AutoCarry.SkillsCrosshair.range = xRange
-	Menu()
-	RebornCheck()
-	VP = VPrediction()
-end
-
--- Drawings
-function PluginOnDraw()
-	if not myHero.dead then
-		if QAble and AutoCarry.PluginMenu.drawQ then
-			DrawCircle(myHero.x, myHero.y, myHero.z, AutoCarry.PluginMenu.extra.qRanger, 0x6600CC)
-		end
-		if RAble and AutoCarry.PluginMenu.drawR then
-			DrawCircle(myHero.x, myHero.y, myHero.z, rRange, 0x990000)
-		end
-	end
-end
-
- -- KS
-function KS()
-	for i = 1, heroManager.iCount do
-		local Enemy = heroManager:getHero(i)
-		if QAble and AutoCarry.PluginMenu.KSQ then qDmg = getDmg("Q",Enemy,myHero) else qDmg = 0 end
-		if EAble and AutoCarry.PluginMenu.KSE then eDmg = getDmg("E",Enemy,myHero) else eDmg = 0 end
-		if RAble then rDmg = getDmg("R",Enemy,myHero) else rDmg = 0 end
-		if ValidTarget(Enemy, 1300, true) and Enemy.health < qDmg then
-			--Net()
-			PeacemakerKS()
-		end
-		if ValidTarget(Enemy, rRange, true) and Enemy.health < rDmg then
-		PrintFloatText(myHero, 0, "Press R For Killshot") end
-		if ValidTarget(Enemy, rRange, true) and AutoCarry.PluginMenu.Killshot and Enemy.health < rDmg and GetDistance(Enemy) >= qRange then
-		CastSpell(_R, Enemy) end
-	end
-end
-
-function Menu()
-AutoCarry.PluginMenu:addSubMenu("---- [ 预判设置 ] ----", "extra")
-AutoCarry.PluginMenu.extra:addParam("useRanger", "设置技能预判距离", SCRIPT_PARAM_ONOFF, true)
-AutoCarry.PluginMenu.extra:addParam("xRanger", "设置预判线条长度", SCRIPT_PARAM_SLICE, 1300, 650, 2000, 0)
-AutoCarry.PluginMenu.extra:addParam("qRanger", "和平使者预判距离", SCRIPT_PARAM_SLICE, 1300, 650, 1350, 0)
-AutoCarry.PluginMenu.extra:addParam("HitChance", "和平使者命中机率", SCRIPT_PARAM_SLICE, 3, 1, 5, 0)
-AutoCarry.PluginMenu.extra:addParam("HitChanceInfo", "显示命中机率信息", SCRIPT_PARAM_ONOFF, false)
-
-AutoCarry.PluginMenu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")
-AutoCarry.PluginMenu:addParam("useW", "自动使用 W", SCRIPT_PARAM_ONOFF, true)
-AutoCarry.PluginMenu:addParam("Dash", "突进使用 E", SCRIPT_PARAM_ONKEYDOWN, false, GetKey("T"))
-AutoCarry.PluginMenu:addParam("Combo", "智能连招 E/Q", SCRIPT_PARAM_ONKEYDOWN, false, GetKey("G"))
-
-AutoCarry.PluginMenu:addParam("sep1", "---- [ 击杀设置 ] ----", SCRIPT_PARAM_INFO, "")
-AutoCarry.PluginMenu:addParam("KSQ", "击杀使用 Q", SCRIPT_PARAM_ONOFF, true)
-AutoCarry.PluginMenu:addParam("Killshot", "击杀使用 R", SCRIPT_PARAM_ONOFF, true)
-AutoCarry.PluginMenu:addParam("KS", "智能连招击杀", SCRIPT_PARAM_ONOFF, true)
-
-AutoCarry.PluginMenu:addParam("sep2", "---- [ 和平使者 ] ----", SCRIPT_PARAM_INFO, "")
-AutoCarry.PluginMenu:addParam("useQ", "连招使用 Q", SCRIPT_PARAM_ONOFF, true)
-AutoCarry.PluginMenu:addParam("useQ2", "消耗使用 Q", SCRIPT_PARAM_ONOFF, false)
-
-AutoCarry.PluginMenu:addParam("sep4", "---- [ 显示设置 ] ----", SCRIPT_PARAM_INFO, "")
-AutoCarry.PluginMenu:addParam("drawQ", "显示范围 Q", SCRIPT_PARAM_ONOFF, false)
-AutoCarry.PluginMenu:addParam("drawR", "显示范围 R", SCRIPT_PARAM_ONOFF, false)
-AutoCarry.PluginMenu:addParam("TrapInfo", "显示信息 W", SCRIPT_PARAM_ONOFF, false)
+	CaitlynLoad()
+	CaitlynMenu()
 end
 
 function PluginOnTick()
-	Checks()
-	CheckRLevel()
-		if Target then
-			if Target and (AutoCarry.MainMenu.AutoCarry) then
-				Peacemaker()
-			end
-			if Target and (AutoCarry.MainMenu.MixedMode) then
-				Peacemaker2()
-			end
-			if AutoCarry.PluginMenu.useW then Trap() end
-			if AutoCarry.PluginMenu.Combo then Net() PeacemakerCombo() end
+	CaitlynCheck()
+	if ValidTarget(Target) then
+		if Menu2.AutoCarry then
+			CaitlynCombo(Target)
 		end
-		if AutoCarry.PluginMenu.KS then KS() end
-		if AutoCarry.PluginMenu.Dash then Dash() end
-	if not AutoCarry.PluginMenu.extra.useRanger then
-		AutoCarry.PluginMenu.extra.xRanger = 1300
-		AutoCarry.PluginMenu.extra.qRanger = 1300
+		if (Menu2.MixedMode or Menu2.LaneClear) and not CaitlynManaLow() then
+			CaitlynHarass(Target)
+		end
 	end
+	if Menu.SpellSub.DashesW or Menu.SpellSub.DashesE then
+		CaitlynDashes()
+	end
+	if Menu.SpellSub.ImmobileW then
+		CaitlynImmobile()
+	end
+	if Menu.SpellSub.FastE then
+		CaitlynFastE()
+	end
+	CaitlynKill()
+end
 
--- Infos
-	if AutoCarry.PluginMenu.extra.HitChanceInfo then
-		PrintChat ("<font color='#FFFFFF'>Hitchance 0: No waypoints found for the target, returning target current position</font>")
-		PrintChat ("<font color='#FFFFFF'>Hitchance 1: Low hitchance to hit the target</font>")
-		PrintChat ("<font color='#FFFFFF'>Hitchance 2: High hitchance to hit the target</font>")
-		PrintChat ("<font color='#FFFFFF'>Hitchance 3: Target too slowed or/and too close(~100% hit chance)</font>")
-		PrintChat ("<font color='#FFFFFF'>Hitchance 4: Target inmmobile(~100% hit chace)</font>")
-		PrintChat ("<font color='#FFFFFF'>Hitchance 5: Target dashing(~100% hit chance)</font>")
-		AutoCarry.PluginMenu.ranges.HitChanceInfo = false
-	end
-	if AutoCarry.PluginMenu.extra.TrapInfo then
-		PrintChat ("<font color='#FFFFFF'>Automatically uses Yordle Snap Trap on inmmobile or dashing targets.</font>")
-		AutoCarry.PluginMenu.ranges.TrapInfo = false
+function PluginOnDraw()
+	if not myHero.dead then
+		if Menu.DrawSub.DrawQ and qReady then
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellQ.Range, 0xFFFFFF)
+		end
+		if Menu.DrawSub.DrawW and wReady then
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellW.Range, 0xFFFFFF)
+		end
+		if Menu.DrawSub.DrawE and eReady then
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellE.Range, 0xFFFFFF)
+		end
+		if Menu.DrawSub.DrawR and rReady then
+			DrawCircle(myHero.x, myHero.y, myHero.z, SpellR.Range, 0xFFFFFF)
+		end
 	end
 end
 
-function Checks()
-	QAble = (myHero:CanUseSpell(_Q) == READY)
-	WAble = (myHero:CanUseSpell(_W) == READY)
-	EAble = (myHero:CanUseSpell(_E) == READY)
-	RAble = (myHero:CanUseSpell(_R) == READY)
+function CaitlynMenu()
+	Menu:addSubMenu("---- [ 连招设置 ] ----", "ComboSub")
+	Menu.ComboSub:addParam("ComboQ", "连招使用 Q", SCRIPT_PARAM_ONOFF, true)
+	Menu.ComboSub:addParam("ComboW", "连招使用 W", SCRIPT_PARAM_ONOFF, true)
+	Menu.ComboSub:addParam("ComboE", "连招使用 E", SCRIPT_PARAM_ONOFF, true)
+
+	Menu:addSubMenu("---- [ 消耗设置 ] ----", "HarassSub")
+	Menu.HarassSub:addParam("HarassQ", "消耗使用 Q", SCRIPT_PARAM_ONOFF, true)
+	Menu.HarassSub:addParam("HarassW", "消耗使用 W", SCRIPT_PARAM_ONOFF, true)
+	Menu.HarassSub:addParam("HarassE", "消耗使用 E", SCRIPT_PARAM_ONOFF, false)
+	Menu.HarassSub:addParam("HarassMana", "蓝耗管理 %", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
+
+	Menu:addSubMenu("---- [ 击杀设置 ] ----", "KillSub")
+	Menu.KillSub:addParam("KillQ", "击杀使用 Q", SCRIPT_PARAM_ONOFF, true)
+	Menu.KillSub:addParam("KillR", "击杀使用 R", SCRIPT_PARAM_ONOFF, true)
+
+	Menu:addSubMenu("---- [ 技能设置 ] ----", "SpellSub")
+	Menu.SpellSub:addParam("sep", "---- [ 和平使者 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu.SpellSub:addParam("MinQ", "使用的最小距离", SCRIPT_PARAM_SLICE, 600, 0, SpellQ.Range, -1)
+	Menu.SpellSub:addParam("ComboQC", "连招模式检测小兵", SCRIPT_PARAM_ONOFF, false)
+	Menu.SpellSub:addParam("HarassQC", "消耗模式检测小兵", SCRIPT_PARAM_ONOFF, true)
+	Menu.SpellSub:addParam("sep", "", SCRIPT_PARAM_INFO, "")
+
+	Menu.SpellSub:addParam("sep", "---- [ 约德尔诱捕器 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu.SpellSub:addParam("DashesW", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
+	Menu.SpellSub:addParam("ImmobileW", "目标禁锢时使用", SCRIPT_PARAM_ONOFF, true)
+	Menu.SpellSub:addParam("sep", "", SCRIPT_PARAM_INFO, "")
+
+	Menu.SpellSub:addParam("sep", "---- [ 90口径绳网 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu.SpellSub:addParam("DashesE", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
+	Menu.SpellSub:addParam("MaxE", "使用的最小距离", SCRIPT_PARAM_SLICE, 250, 0, SpellE.Range, -1)
+	Menu.SpellSub:addParam("RangesE", "突进的最小距离", SCRIPT_PARAM_SLICE, 600, 0, SpellE.Range, -1)
+	Menu.SpellSub:addParam("FastE", "快速鼠标方向突进", SCRIPT_PARAM_ONKEYDOWN, false, GetKey("T"))
+	Menu.SpellSub:addParam("sep", "", SCRIPT_PARAM_INFO, "")
+
+	Menu.SpellSub:addParam("sep", "---- [ 让子弹飞 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu.SpellSub:addParam("MinR", "使用的最小距离", SCRIPT_PARAM_SLICE, 600, 0, SpellR.Range, -1)
+
+	Menu:addSubMenu("---- [ 显示设置 ] ----", "DrawSub")
+	Menu.DrawSub:addParam("DrawQ", "显示 Q 范围", SCRIPT_PARAM_ONOFF, false)
+	Menu.DrawSub:addParam("DrawW", "显示 W 范围", SCRIPT_PARAM_ONOFF, false)
+	Menu.DrawSub:addParam("DrawE", "显示 E 范围", SCRIPT_PARAM_ONOFF, false)
+	Menu.DrawSub:addParam("DrawR", "显示 R 范围", SCRIPT_PARAM_ONOFF, false)
+end
+
+function CaitlynLoad()
+	AutoCarry.SkillsCrosshair.range = 3000
+	VP = VPrediction()
+	Menu = AutoCarry.PluginMenu
+	Menu2 = AutoCarry.MainMenu
+	Enemies = GetEnemyHeroes()
+	if AutoCarry.Skills then
+		AutoCarry.Skills:DisableAll()
+	end
+end
+
+function CaitlynCheck()
 	Target = AutoCarry.GetAttackTarget()
-end
-
-function CheckRLevel()
-	if myHero:GetSpellData(_R).level == 1 then rRange = 2000
-	elseif myHero:GetSpellData(_R).level == 2 then rRange = 2500
-	elseif myHero:GetSpellData(_R).level == 3 then rRange = 3000
+	qReady = (myHero:CanUseSpell(_Q) == READY)
+	wReady = (myHero:CanUseSpell(_W) == READY)
+	eReady = (myHero:CanUseSpell(_E) == READY)
+	rReady = (myHero:CanUseSpell(_R) == READY)
+	for _, enemy in ipairs(Enemies) do
+		if not enemy.dead and ValidTarget(enemy) then
+			qDmg = getDmg("Q", enemy, myHero)
+			wDmg = getDmg("W", enemy, myHero)
+			eDmg = getDmg("E", enemy, myHero)
+			rDmg = getDmg("R", enemy, myHero)
+		end
 	end
 end
 
-function Peacemaker()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 0.632, 90, qRange, 2225, myHero)
-		if IsSACReborn and QAble and AutoCarry.PluginMenu.useQ and not AutoCarry.Orbwalker:IsShooting() and HitChance >= AutoCarry.PluginMenu.extra.HitChance and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
+function CaitlynCombo(unit)
+	if qReady and Menu.ComboSub.ComboQ and GetDistance(unit) < SpellQ.Range then
+		if Menu.SpellSub.ComboQC then
+			CastVPredQCollision(unit)
+		else
+			CastVPredQNoCollision(unit)
+		end
+	end
+	if wReady and Menu.ComboSub.ComboW and GetDistance(unit) < SpellW.Range then
+		CastVPredW(unit)
+	end
+	if eReady and Menu.ComboSub.ComboE and GetDistance(unit) < Menu.SpellSub.MaxE then
+		CastVPredE(unit)
+	end
+end
+
+function CaitlynHarass(unit)
+	if qReady and Menu.HarassSub.HarassQ and GetDistance(unit) < SpellQ.Range then
+		if Menu.SpellSub.HarassQC then
+			CastVPredQCollision(unit)
+		else
+			CastVPredQNoCollision(unit)
+		end
+	end
+	if wReady and Menu.HarassSub.HarassW and GetDistance(unit) < SpellW.Range then
+		CastVPredW(unit)
+	end
+	if eReady and Menu.HarassSub.HarassE and GetDistance(unit) < Menu.SpellSub.MaxE then
+		CastVPredE(unit)
+	end
+end
+
+function CaitlynKill()
+	for _, enemy in ipairs(Enemies) do
+		if not enemy.dead and ValidTarget(enemy) then
+			if Menu.KillSub.KillQ and GetDistance(enemy) < SpellQ.Range and qDmg > enemy.health then
+				CastVPredQNoCollision(enemy)
+			elseif Menu.KillSub.KillR and GetDistance(enemy) < SpellR.Range and rDmg > enemy.health then
+				CastVPredR(enemy)
+			end
+		end
+	end
+end
+
+function CaitlynDashes()
+	for _, enemy in ipairs(Enemies) do
+		if not enemy.dead and ValidTarget(enemy) then
+			if Menu.SpellSub.DashesE then
+				local IsDashing, CanHit, Position = VP:IsDashing(enemy, SpellE.Delay, SpellE.Width, SpellE.Speed, myHero)
+				if IsDashing and CanHit and eReady and GetDistance(Position) < Menu.SpellSub.RangesE then
+					CastSpell(_E, Position.x, Position.z)
+				end
+			elseif Menu.SpellSub.DashesW then
+				local IsDashing, CanHit, Position = VP:IsDashing(enemy, SpellW.Delay, SpellW.Width, SpellW.Speed, myHero)
+				if IsDashing and CanHit and wReady and GetDistance(Position) < SpellW.Range then
+					CastSpell(_W, Position.x, Position.z)
+				end
+			end
+		end
+	end
+end
+
+function CaitlynImmobile()
+	for _, enemy in ipairs(Enemies) do
+		if not enemy.dead and ValidTarget(enemy) then
+			local IsImmobile, Pos = VP:IsImmobile(enemy, SpellW.Delay, SpellW.Width, SpellW.Speed, myHero)
+			if IsImmobile and wReady and GetDistance(Pos) < SpellW.Range then
+				CastSpell(_W, Pos.x, Pos.z)
+			end
+		end
+	end
+end
+
+function CaitlynFastE()
+	if eReady then
+		MPos = Vector(mousePos.x, mousePos.y, mousePos.z)
+		HeroPos = Vector(myHero.x, myHero.y, myHero.z)
+		DashPos = HeroPos + (HeroPos - MPos) * (500 / GetDistance(mousePos))
+		myHero:MoveTo(mousePos.x, mousePos.z)
+		CastSpell(_E,DashPos.x, DashPos.z)
+	end
+end
+
+function CaitlynManaLow()
+	if (myHero.mana / myHero.maxMana) < (Menu.HarassSub.HarassMana / 100) then
+		return true
+	else
+		return false
+	end
+end
+
+function CastVPredQCollision(unit)
+	if qReady and ValidTarget(unit) then
+		local CastPosition, HitChance, Position = VP:GetLineCastPosition(unit, SpellQ.Delay, SpellQ.Width, SpellQ.Range, SpellQ.Speed, myHero, true)
+		if HitChance >= 2 and GetDistance(PredictedPos) > Menu.SpellSub.MinQ and GetDistance(CastPosition) < SpellQ.Range then
 			CastSpell(_Q, CastPosition.x, CastPosition.z)
-		elseif QAble and AutoCarry.PluginMenu.useQ and HitChance >= AutoCarry.PluginMenu.extra.HitChance and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
+		end
+	end
+end
+function CastVPredQNoCollision(unit)
+	if qReady and ValidTarget(unit) then
+		local CastPosition, HitChance, Position = VP:GetLineCastPosition(unit, SpellQ.Delay, SpellQ.Width, SpellQ.Range, SpellQ.Speed, myHero, false)
+		if HitChance >= 2 and GetDistance(PredictedPos) > Menu.SpellSub.MinQ and GetDistance(CastPosition) < SpellQ.Range then
 			CastSpell(_Q, CastPosition.x, CastPosition.z)
 		end
 	end
 end
 
-function Peacemaker2()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 0.632, 90, qRange, 2225, myHero)
-		if IsSACReborn and QAble and AutoCarry.PluginMenu.useQ2 and not AutoCarry.Orbwalker:IsShooting() and HitChance >= AutoCarry.PluginMenu.extra.HitChance and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
-			CastSpell(_Q, CastPosition.x, CastPosition.z)
-		elseif QAble and AutoCarry.PluginMenu.useQ2 and HitChance >= AutoCarry.PluginMenu.extra.HitChance and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
-			CastSpell(_Q, CastPosition.x, CastPosition.z)
+function CastVPredW(unit)
+	if wReady and ValidTarget(unit) then
+		local PredictedPos, HitChance = VP:GetPredictedPos(unit, SpellW.Delay, SpellW.Speed, myHero, false)
+		if HitChance >= 2 and GetDistance(PredictedPos) < SpellW.Range then
+			CastSpell(_W, PredictedPos.x, PredictedPos.z)
 		end
 	end
 end
 
-function PeacemakerKS()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 0.632, 90, qRange, 2225, myHero)
-		if QAble and HitChance >= 2 and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
-			CastSpell(_Q, CastPosition.x, CastPosition.z)
-		end
-	end
-end
-
-function PeacemakerCombo()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 0.632, 90, qRange, 2225, myHero)
-		if QAble and not EAble and HitChance >= 2 and GetDistance(CastPosition) < AutoCarry.PluginMenu.extra.qRanger then
-			CastSpell(_Q, CastPosition.x, CastPosition.z)
-		end
-	end
-end
-
-function Net()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 0.1, 80, eRange, 1960, myHero)
-		if EAble and HitChance >= AutoCarry.PluginMenu.extra.HitChance and GetDistance(CastPosition) < eRange then
+function CastVPredE(unit)
+	if eReady and ValidTarget(unit) then
+		local CastPosition, HitChance, Position = VP:GetLineCastPosition(unit, SpellE.Delay, SpellE.Width, SpellE.Range, SpellE.Speed, myHero, false)
+		if HitChance >= 2 and GetDistance(CastPosition) < SpellE.Range then
 			CastSpell(_E, CastPosition.x, CastPosition.z)
 		end
 	end
 end
 
-function Trap()
-	for i, target in pairs(GetEnemyHeroes()) do
-		CastPosition,  HitChance,  Position = VP:GetLineCastPosition(Target, 1.5, 100, wRange, math.huge, myHero)
-		if WAble and HitChance >= 4 and GetDistance(CastPosition) <= 800 then
-			CastSpell(_W, CastPosition.x, CastPosition.z)
+function CastVPredR(unit)
+	if rReady and ValidTarget(unit) then
+		local PredictedPos, HitChance = VP:GetPredictedPos(unit, SpellR.Delay, SpellR.Speed, myHero, false)
+		if HitChance >= 2 and GetDistance(PredictedPos) > Menu.SpellSub.MinR and GetDistance(PredictedPos) < SpellR.Range then
+			CastSpell(_R, unit)
 		end
 	end
-end
-
-function Dash()
-	if EAble and AutoCarry.PluginMenu.Dash then
-		MPos = Vector(mousePos.x, mousePos.y, mousePos.z)
-		HeroPos = Vector(myHero.x, myHero.y, myHero.z)
-		DashPos = HeroPos + ( HeroPos - MPos )*(500/GetDistance(mousePos))
-		myHero:MoveTo(mousePos.x,mousePos.z)
-		CastSpell(_E,DashPos.x,DashPos.z)
-	end
-end
-
-function OnGainBuff(Unit, Buff)
-	if AutoCarry.PluginMenu.useW then
-		if ValidTarget(Unit, 800) and WAble and (Buff.type == 5 or Buff.type == 8 or Buff.type == 10 or Buff.type == 11 or Buff.type == 21 or Buff.type == 22 or Buff.type == 29) then
-			CastSpell(_W, Unit.visionPos.x, Unit.visionPos.z)
-		end
-	end
-end
-
-function RebornCheck()
-	if AutoCarry.Skills then IsSACReborn = true else IsSACReborn = false end
-	PrintChat("<font color='#FFFFFF'>>> Officer Caitlyn: I'm on the case.</font>")
 end

@@ -1,6 +1,12 @@
-local Version = 1.0
+local Version = "1.0"
 
 require "VPrediction"
+
+local SpellQ = {Range =  825, Speed = 1500, Delay = 0.35, Width = 188}
+local SpellW = {Range =  800, Speed =  700, Delay = 0.50, Width = 120}
+local SpellE = {Range =  600, Speed =  902, Delay = 0.50, Width =  75}
+local SpellR = {Range = 1225, Speed = 2000, Delay = 0.17, Width =  30}
+local qReady, wReady, eReady, rReady = false, false, false, false
 
 function PluginOnLoad()
 	CorkiLoad()
@@ -11,26 +17,10 @@ function PluginOnTick()
 	CorkiCheck()
 	if ValidTarget(Target) then
 		if Menu2.AutoCarry then
-			if qReady and Menu.ComboQ and GetDistance(Target) < SpellQ.Range then
-				CastVPredQ(Target)
-			end
-			if eReady and Menu.ComboE and GetDistance(Target) < SpellE.Range then
-				CastSpell(_E, Target)
-			end
-			if rReady and Menu.ComboR and GetDistance(Target) < SpellR.Range then
-				CastVPredR(Target)
-			end
+			CorkiCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if qReady and Menu.HarassQ and GetDistance(Target) < SpellQ.Range then
-				CastVPredQ(Target)
-			end
-			if eReady and Menu.HarassE and GetDistance(Target) < SpellE.Range then
-				CastSpell(_E, Target)
-			end
-			if rReady and Menu.HarassR and GetDistance(Target) < SpellR.Range then
-				CastVPredR(Target)
-			end
+			CorkiHarass(Target)
 		end
 	end
 	CorkiKill()
@@ -61,9 +51,9 @@ function CorkiMenu()
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 消耗设置 ] ----", SCRIPT_PARAM_INFO, "")
-	Menu:addParam("HarassQ", "消耗使用 Q", SCRIPT_PARAM_ONOFF, true)
+	Menu:addParam("HarassQ", "消耗使用 Q", SCRIPT_PARAM_ONOFF, false)
 	Menu:addParam("HarassE", "消耗使用 E", SCRIPT_PARAM_ONOFF, false)
-	Menu:addParam("HarassR", "消耗使用 R", SCRIPT_PARAM_ONOFF, false)
+	Menu:addParam("HarassR", "消耗使用 R", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 击杀设置 ] ----", SCRIPT_PARAM_INFO, "")
@@ -80,11 +70,6 @@ end
 
 function CorkiLoad()
 	AutoCarry.SkillsCrosshair.range = 1225
-	SpellQ = {Range =  825, Speed =  850, Delay = 0.25, Width = 250}
-	SpellW = {Range =  800, Speed =  700, Delay = 0.50, Width = 160}
-	SpellE = {Range =  600, Speed =  902, Delay = 0.25, Width = 100}
-	SpellR = {Range = 1225, Speed =  829, Delay = 0.18, Width =  40}
-	qReady, wReady, eReady, rReady = false, false, false, false
 	VP = VPrediction()
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
@@ -110,6 +95,30 @@ function CorkiCheck()
 	end
 end
 
+function CorkiCombo(unit)
+	if qReady and Menu.ComboQ and GetDistance(unit) < SpellQ.Range then
+		CastVPredQ(unit)
+	end
+	if eReady and Menu.ComboE and GetDistance(unit) < SpellE.Range then
+		CastVPredE(unit)
+	end
+	if rReady and Menu.ComboR and GetDistance(unit) < SpellR.Range then
+		CastVPredR(unit)
+	end
+end
+
+function CorkiHarass(unit)
+	if qReady and Menu.HarassQ and GetDistance(unit) < SpellQ.Range then
+		CastVPredQ(unit)
+	end
+	if eReady and Menu.HarassE and GetDistance(unit) < SpellE.Range then
+		CastVPredE(unit)
+	end
+	if rReady and Menu.HarassR and GetDistance(unit) < SpellR.Range then
+		CastVPredR(unit)
+	end
+end
+
 function CorkiKill()
 	for _, enemy in ipairs(Enemies) do
 		if not enemy.dead and ValidTarget(enemy) then
@@ -124,9 +133,23 @@ end
 
 function CastVPredQ(unit)
 	if qReady and ValidTarget(unit) then
-		local CastPosition, HitChance, Position = VP:GetCircularCastPosition(unit, SpellQ.Delay, SpellQ.Width, SpellQ.Range, SpellQ.Speed, myHero, false)
-		if HitChance >= 2 and GetDistance(CastPosition) < SpellQ.Range then
+		local PredictedPos, EnemyHit = VP:GetPredictedPos(unit, SpellQ.Delay, SpellQ.Speed, myHero, false)
+		local CastPosition, SkillHit, Position = VP:GetCircularCastPosition(unit, SpellQ.Delay, SpellQ.Width, SpellQ.Range, SpellQ.Speed, myHero, false)
+		if SkillHit >= 2 and GetDistance(CastPosition) < SpellQ.Range then
 			CastSpell(_Q, CastPosition.x, CastPosition.z)
+		elseif EnemyHit >= 2 and GetDistance(PredictedPos) < SpellQ.Range then
+			CastSpell(_Q, PredictedPos.x, PredictedPos.z)
+		end
+	end
+end
+
+function CastVPredE(unit)
+	if eReady and ValidTarget(unit) then
+		local PredictedPos, HitChance = VP:GetPredictedPos(unit, SpellE.Delay, SpellE.Speed, myHero, false)
+		if PredictedPos ~= nil and HitChance ~= nil and GetDistance(unit) < SpellE.Range then
+			if (GetDistance(PredictedPos) < SpellE.Range + VP:GetHitBox(unit)) or (GetDistance(unit) < SpellE.Range + VP:GetHitBox(unit)) then
+				CastSpell(_E, unit)
+			end
 		end
 	end
 end

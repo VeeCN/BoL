@@ -1,6 +1,12 @@
-local Version = 1.0
+local Version = "1.0"
 
 require "VPrediction"
+
+local SpellQ = {Range =  700, Speed = 1100, Delay =  0.5, Width =   0}
+local SpellW = {Range =    0, Speed =   20, Delay = 0.25, Width =   0}
+local SpellE = {Range =  700, Speed = 1100, Delay =  0.2, Width =   0}
+local SpellR = {Range =  900, Speed =   20, Delay = 0.25, Width =   0}
+local qReady, wReady, eReady, rReady = false, false, false, false
 
 function PluginOnLoad()
 	ZileanLoad()
@@ -9,41 +15,12 @@ end
 
 function PluginOnTick()
 	ZileanCheck()
-	DamageCalculation()
 	if ValidTarget(Target) then
 		if Menu2.AutoCarry then
-			if qReady and Menu.ComboQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-			end
-			if wReady and Menu.ComboW and Menu.ComboQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-				CastSpell(_W)
-				CastSpell(_Q, Target)
-			end
-			if eReady and Menu.ComboE then
-				if GetDistance(Target) < Menu.CRangesE then
-					CastSpell(_E, Target)
-				else
-					CastSpell(_E, myHero)
-				end
-			end
+			ZileanCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if qReady and Menu.HarassQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-			end
-			if wReady and Menu.HarassW and Menu.HarassQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-				CastSpell(_W)
-				CastSpell(_Q, Target)
-			end
-			if eReady and Menu.HarassE then
-				if GetDistance(Target) < Menu.HRangesE then
-					CastSpell(_E, Target)
-				else
-					CastSpell(_E, myHero)
-				end
-			end
+			ZileanHarass(Target)
 		end
 	end
 	if Menu.RunMode then
@@ -60,8 +37,8 @@ function PluginOnTick()
 	if Menu.SmartUlt then
 		ZileanUlt()
 	end
-	if Menu.DashesE and (Menu2.AutoCarry or Menu2.MixedMode or ZileanHealthLow()) then
-		ZileanPush()
+	if Menu.DashesE then
+		ZileanDashes()
 	end
 	ZileanKill()
 end
@@ -95,7 +72,7 @@ function ZileanMenu()
 	Menu:addParam("HRangesE", "距离设置 E", SCRIPT_PARAM_SLICE, 500, 0, SpellE.Range, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
-	Menu:addParam("sep", "---- [ 其他设置 ] ----", SCRIPT_PARAM_INFO, "")
+	Menu:addParam("sep", "---- [ 技能设置 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("SmartKill", "智能连招击杀", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("RunMode", "追逐逃跑模式", SCRIPT_PARAM_ONKEYTOGGLE, false, GetKey("T"))
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
@@ -103,7 +80,6 @@ function ZileanMenu()
 	Menu:addParam("sep", "---- [ 时光发条 ] ----", SCRIPT_PARAM_INFO, "")
 	Menu:addParam("DashesE", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("RangesE", "目标的距离小于", SCRIPT_PARAM_SLICE, 500, 0, SpellE.Range, -1)
-	Menu:addParam("HealthE", "自己的血量小于", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 
 	Menu:addParam("sep", "---- [ 时光倒流 ] ----", SCRIPT_PARAM_INFO, "")
@@ -130,11 +106,6 @@ end
 
 function ZileanLoad()
 	AutoCarry.SkillsCrosshair.range = 900
-	SpellQ = {Range =  700, Speed = 1100, Delay =  0.5, Width =   0}
-	SpellW = {Range =    0, Speed =   20, Delay = 0.25, Width =   0}
-	SpellE = {Range =  700, Speed =   20, Delay =  0.2, Width =   0}
-	SpellR = {Range =  900, Speed =   20, Delay = 0.25, Width =   0}
-	qReady, wReady, eReady, rReady = false, false, false, false
 	VP = VPrediction()
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
@@ -157,6 +128,42 @@ function ZileanCheck()
 			wDmg = getDmg("W", enemy, myHero)
 			eDmg = getDmg("E", enemy, myHero)
 			rDmg = getDmg("R", enemy, myHero)
+		end
+	end
+end
+
+function ZileanCombo(unit)
+	if qReady and Menu.ComboQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+	end
+	if wReady and Menu.ComboW and Menu.ComboQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+		CastSpell(_W)
+		CastSpell(_Q, unit)
+	end
+	if eReady and Menu.ComboE then
+		if GetDistance(unit) < Menu.CRangesE then
+			CastSpell(_E, unit)
+		else
+			CastSpell(_E, myHero)
+		end
+	end
+end
+
+function ZileanHarass(unit)
+	if qReady and Menu.HarassQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+	end
+	if wReady and Menu.HarassW and Menu.HarassQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+		CastSpell(_W)
+		CastSpell(_Q, unit)
+	end
+	if eReady and Menu.HarassE then
+		if GetDistance(unit) < Menu.HRangesE then
+			CastSpell(_E, unit)
+		else
+			CastSpell(_E, myHero)
 		end
 	end
 end
@@ -189,11 +196,11 @@ function ZileanKill()
 	end
 end
 
-function ZileanPush()
+function ZileanDashes()
 	for _, enemy in ipairs(Enemies) do
 		if not enemy.dead and ValidTarget(enemy) then
 			local IsDashing, CanHit, Position = VP:IsDashing(enemy, SpellE.Delay, SpellE.Width, SpellE.Speed, myHero)
-			if IsDashing and CanHit and eReady and GetDistance(enemy) < Menu.RangesE then
+			if IsDashing and CanHit and eReady and GetDistance(Position) < Menu.RangesE then
 				CastSpell(_E, enemy)
 			end
 		end
@@ -214,14 +221,6 @@ function ZileanUlt()
 	end
 	if UltTarget and rReady then
 		CastSpell(_R, UltTarget)
-	end
-end
-
-function ZileanHealthLow()
-	if (myHero.health / myHero.maxHealth) < (Menu.HealthE / 100) then
-		return true
-	else
-		return false
 	end
 end
 

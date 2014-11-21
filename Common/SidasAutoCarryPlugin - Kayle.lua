@@ -2,6 +2,12 @@ local Version = 1.0
 
 require "VPrediction"
 
+local SpellQ = {Range =  650, Speed = 1500, Delay = 0.25, Width =   0}
+local SpellW = {Range =  900, Speed =   20, Delay = 0.39, Width =   0}
+local SpellE = {Range =  525, Speed =  780, Delay = 0.25, Width =   0}
+local SpellR = {Range =  900, Speed =    0, Delay = 0.25, Width =   0}
+local qReady, wReady, eReady, rReady = false, false, false, false
+
 function PluginOnLoad()
 	KayleLoad()
 	KayleMenu()
@@ -11,32 +17,16 @@ function PluginOnTick()
 	KayleCheck()
 	if ValidTarget(Target) then
 		if Menu2.AutoCarry then
-			if qReady and Menu.ComboQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-			end
-			if wReady and Menu.ComboW and GetDistance(Target) > SpellE.Range then
-				CastSpell(_W)
-			end
-			if eReady and Menu.ComboE and GetDistance(Target) < SpellE.Range then
-				CastSpell(_E)
-			end
+			KayleCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if qReady and Menu.HarassQ and GetDistance(Target) < SpellQ.Range then
-				CastSpell(_Q, Target)
-			end
-			if wReady and Menu.HarassW and GetDistance(Target) > SpellE.Range then
-				CastSpell(_W)
-			end
-			if eReady and Menu.HarassE and GetDistance(Target) < SpellE.Range then
-				CastSpell(_E)
-			end
+			KayleHarass(Target)
 		end
 	end
 	if Menu.SmartUlt then
 		KayleUlt()
 	end
-	if Menu.DashesQ and (Menu2.AutoCarry or Menu2.MixedMode or KayleHealthLow()) then
+	if Menu.DashesQ then
 		KayleDashes()
 	end
 	KayleKill()
@@ -76,7 +66,6 @@ function KayleMenu()
 	Menu:addParam("SmartKill", "智能连招击杀", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("DashesQ", "目标突进时使用", SCRIPT_PARAM_ONOFF, true)
 	Menu:addParam("RangesQ", "使用的距离设置", SCRIPT_PARAM_SLICE, 500, 0, SpellQ.Range, -1)
-	Menu:addParam("HealthQ", "使用的血量设置", SCRIPT_PARAM_SLICE, 50, 0, 100, -1)
 	Menu:addParam("sep", "", SCRIPT_PARAM_INFO, "")
 	
 	Menu:addParam("sep", "---- [ 神圣庇护 ] ----", SCRIPT_PARAM_INFO, "")
@@ -102,11 +91,6 @@ end
 
 function KayleLoad()
 	AutoCarry.SkillsCrosshair.range = 900
-	SpellQ = {Range =  650, Speed = 1500, Delay = 0.25, Width =   0}
-	SpellW = {Range =  900, Speed =   20, Delay = 0.39, Width =   0}
-	SpellE = {Range =  525, Speed =  780, Delay = 0.25, Width =   0}
-	SpellR = {Range =  900, Speed =    0, Delay = 0.25, Width =   0}
-	qReady, wReady, eReady, rReady = false, false, false, false
 	VP = VPrediction()
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
@@ -133,9 +117,33 @@ function KayleCheck()
 	end
 end
 
+function KayleCombo(unit)
+	if qReady and Menu.ComboQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+	end
+	if wReady and Menu.ComboW and GetDistance(unit) > SpellE.Range then
+		CastSpell(_W)
+	end
+	if eReady and Menu.ComboE and GetDistance(unit) < SpellE.Range then
+		CastSpell(_E)
+	end
+end
+
+function KayleHarass(unit)
+	if qReady and Menu.HarassQ and GetDistance(unit) < SpellQ.Range then
+		CastSpell(_Q, unit)
+	end
+	if wReady and Menu.HarassW and GetDistance(unit) > SpellE.Range then
+		CastSpell(_W)
+	end
+	if eReady and Menu.HarassE and GetDistance(unit) < SpellE.Range then
+		CastSpell(_E)
+	end
+end
+
 function KayleKill()
 	if Menu.SmartKill then
-		for idx, enemy in ipairs(Enemies) do
+		for _, enemy in ipairs(Enemies) do
 			if not enemy.dead and ValidTarget(enemy) then
 				if qDmg > enemy.health then
 					if GetDistance(enemy) > SpellQ.Range and GetDistance(enemy) < 900 then
@@ -154,7 +162,7 @@ function KayleDashes()
 	for _, enemy in ipairs(Enemies) do
 		if not enemy.dead and ValidTarget(enemy) and GetDistance(enemy) < SpellQ.Range then
 			local IsDashing, CanHit, Position = VP:IsDashing(enemy, SpellQ.Delay, SpellQ.Width, SpellQ.Speed, myHero)
-			if IsDashing and CanHit and qReady and GetDistance(enemy) < Menu.RangesQ then
+			if IsDashing and CanHit and qReady and GetDistance(Position) < Menu.RangesQ then
 				CastSpell(_Q, enemy)
 			end
 		end
@@ -175,14 +183,6 @@ function KayleUlt()
 	end
 	if UltTarget and rReady then
 		CastSpell(_R, UltTarget)
-	end
-end
-
-function KayleHealthLow()
-	if (myHero.health / myHero.maxHealth) < (Menu.HealthQ / 100) then
-		return true
-	else
-		return false
 	end
 end
 

@@ -1,4 +1,7 @@
-local Version = 1.0
+local Version = "1.0"
+
+local qRange, eRange = 600, 150
+local qReady, wReady, eReady, rReady = false, false, false, false
 
 function PluginOnLoad()
 	MasterYiLoad()
@@ -9,20 +12,10 @@ function PluginOnTick()
 	MasterYiCheck()
 	if ValidTarget(Target) then
 		if Menu2.AutoCarry then
-			if qReady and Menu.ComboQ and GetDistance(Target) < qRange then
-				CastSpell(_Q, Target)
-			end
-			if eReady and Menu.ComboE and GetDistance(Target) < eRange then
-				CastSpell(_E)
-			end
+			MasterYiCombo(Target)
 		end
 		if Menu2.MixedMode or Menu2.LaneClear then
-			if qReady and Menu.HarassQ and GetDistance(Target) < qRange then
-				CastSpell(_Q, Target)
-			end
-			if eReady and Menu.HarassE and GetDistance(Target) < eRange then
-				CastSpell(_E)
-			end
+			MasterYiHarass(Target)
 		end
 	end
 	MasterYiKill()
@@ -61,8 +54,6 @@ end
 
 function MasterYiLoad()
 	AutoCarry.SkillsCrosshair.range = 600
-	qRange, eRange = 600, 125
-	qReady, wReady, eReady, rReady = false, false, false, false
 	Menu = AutoCarry.PluginMenu
 	Menu2 = AutoCarry.MainMenu
 	Enemies = GetEnemyHeroes()
@@ -84,6 +75,24 @@ function MasterYiCheck()
 			eDmg = getDmg("E", enemy, myHero)
 			rDmg = getDmg("R", enemy, myHero)
 		end
+	end
+end
+
+function MasterYiCombo(unit)
+	if qReady and Menu.ComboQ and GetDistance(unit) < qRange then
+		CastSpell(_Q, unit)
+	end
+	if eReady and Menu.ComboE and GetDistance(unit) < eRange then
+		CastSpell(_E)
+	end
+end
+
+function MasterYiHarass(unit)
+	if qReady and Menu.HarassQ and GetDistance(unit) < qRange then
+		CastSpell(_Q, unit)
+	end
+	if eReady and Menu.HarassE and GetDistance(unit) < eRange then
+		CastSpell(_E)
 	end
 end
 
